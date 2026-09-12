@@ -1,6 +1,7 @@
 package com.task.breem.data.models;
 
 import com.task.breem.data.models.Enums.LoanStatus;
+import com.task.breem.data.models.Enums.RepaymentFrequency;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -29,7 +30,9 @@ public class Loan {
 
     private double interestRate;
 
-    private int tenureMonths;
+    private int tenureCounts;
+
+    private RepaymentFrequency frequency;
 
     @Enumerated(EnumType.STRING)
     private LoanStatus status = LoanStatus.PENDING;

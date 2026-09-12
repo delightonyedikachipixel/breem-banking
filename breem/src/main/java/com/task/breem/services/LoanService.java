@@ -3,6 +3,7 @@ package com.task.breem.services;
 import com.task.breem.dtos.requests.LoanRequestDto;
 import com.task.breem.dtos.responses.LoanResponseDto;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 public interface LoanService {
@@ -15,4 +16,5 @@ public interface LoanService {
     LoanResponseDto cancelLoan (UUID loanId);
     LoanResponseDto markCompleted (UUID loanId);
     LoanResponseDto markDefaulted (UUID loanId);
+    BigDecimal calculateInstallment(UUID loanId);
 }

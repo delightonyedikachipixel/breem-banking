@@ -1,5 +1,6 @@
 package com.task.breem.dtos.requests;
 
+import com.task.breem.data.models.Enums.RepaymentFrequency;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
@@ -21,6 +22,9 @@ public class LoanRequestDto {
     private double interestRate;
 
     @NotNull
-    private int tenureMonths;
+    private int tenureCounts;
+
+    @NotNull
+    private RepaymentFrequency frequency;
 
 }

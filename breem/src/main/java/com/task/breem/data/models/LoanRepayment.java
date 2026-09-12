@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -27,10 +27,10 @@ public class LoanRepayment {
 
     private BigDecimal amount;
 
-    private Instant dueDate;
+    private LocalDateTime dueDate;
 
-    private Instant paidDate;
+    private LocalDateTime paidDate;
 
     @Enumerated(EnumType.STRING)
-    private LoanRepaymentStatus status;
+    private LoanRepaymentStatus status =  LoanRepaymentStatus.PENDING;
 }
