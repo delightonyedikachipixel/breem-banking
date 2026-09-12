@@ -23,7 +23,7 @@ public class LoanResponseDto {
 
     private double interestRate;
 
-    private int tenureMonths;
+    private int tenureCounts;
 
     private LoanStatus status;
 
