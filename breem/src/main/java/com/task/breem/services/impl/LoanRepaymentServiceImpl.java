@@ -1,14 +1,14 @@
 package com.task.breem.services.impl;
 
+import com.task.breem.config.RepaymentArgs;
 import com.task.breem.data.models.Account;
-import com.task.breem.data.models.Enums.NotificationType;
+import com.task.breem.data.models.Enums.LoanRepaymentStatus;
 import com.task.breem.data.models.Enums.RepaymentFrequency;
 import com.task.breem.data.models.Loan;
 import com.task.breem.data.models.LoanRepayment;
 import com.task.breem.data.repository.AccountRepository;
 import com.task.breem.data.repository.LoanRepaymentRepository;
 import com.task.breem.data.repository.LoanRepository;
-import com.task.breem.dtos.requests.TransferRequest;
 import com.task.breem.dtos.responses.LoanRepaymentResponse;
 import com.task.breem.exceptions.InsufficientBalanceException;
 import com.task.breem.exceptions.LoanNotFoundException;
@@ -19,10 +19,13 @@ import com.task.breem.services.NotificationService;
 import com.task.breem.services.TransactionService;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.modelmapper.TypeToken;
 import org.springframework.stereotype.Service;
 
+import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -38,17 +41,17 @@ public class LoanRepaymentServiceImpl implements LoanRepaymentService {
     private final ModelMapper modelMapper;
 
     @Override
-    public LoanRepaymentResponse repayLoan(UUID loanId, UUID accountId, UUID transactionId, TransferRequest transferRequest, NotificationType notificationType) {
+    public LoanRepaymentResponse repayLoan(RepaymentArgs repaymentArgs) {
 
-        Account account = accountRepository.findById(accountId).orElseThrow(
+        Account account = accountRepository.findById(repaymentArgs.getAccountId()).orElseThrow(
                 ()-> new UserNotFoundException("Account not found"));
 
-        Loan loan  = loanRepository.findById(loanId).orElseThrow(
+        Loan loan  = loanRepository.findById(repaymentArgs.getLoanId()).orElseThrow(
                 ()-> new LoanNotFoundException("Loan not found"));
 
         LocalDateTime whenNextDue = getNextDueDate(loan.getFrequency(), loan.getDisbursedAt());
 
-        BigDecimal repaymentAmount = loanService.calculateInstallment(loanId);
+        BigDecimal repaymentAmount = loanService.calculateInstallment(repaymentArgs.getLoanId());
 
         if (account.getBalance().compareTo(repaymentAmount) >= 0) {
             LoanRepayment loanRepayment = LoanRepayment.builder()
@@ -56,18 +59,26 @@ public class LoanRepaymentServiceImpl implements LoanRepaymentService {
                     .amount(repaymentAmount)
                     .dueDate(whenNextDue)
                     .paidDate(LocalDateTime.now())
+                    .status(LoanRepaymentStatus.PAID)
                     .build();
 
             loanRepaymentRepository.save(loanRepayment);
 
-            transactionService.transfer(transferRequest);
+            transactionService.transfer(repaymentArgs.getTransferRequest());
 
-            notificationService.notify(loan.getUser().getId(), notificationType, "Loan", "Loan repayment ");
+            notificationService.notify(loan.getUser().getId(), repaymentArgs.getNotificationType(), "Loan", "Loan repayment ");
 
             return  modelMapper.map(loanRepayment, LoanRepaymentResponse.class);
         }
 
         throw new InsufficientBalanceException("Insufficient balance");
+    }
+
+    @Override
+    public List<LoanRepaymentResponse> getAllPayments(UUID loanId) {
+        List <LoanRepayment> repayments = loanRepaymentRepository.findAllByLoan_id(loanId);
+        Type type = new TypeToken<List<LoanRepaymentResponse>>(){}.getType();
+        return modelMapper.map(repayments, type);
     }
 
     private LocalDateTime getNextDueDate(RepaymentFrequency frequency, LocalDateTime date) {
